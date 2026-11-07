@@ -30,6 +30,7 @@ export enum ModuleEnum {
   MUSICS = "musics",
   ONLINE_VIDEOS = "online_videos",
   OVERLAY = "overlay",
+  PLAY_STATS = "play_stats",
   REMOTE_CONTROL = "remote_control",
   SCHEDULED_ITEMS = "scheduled_items",
   SLIDE_EDITOR = "slide_editor",

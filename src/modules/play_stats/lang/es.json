@@ -1,0 +1,46 @@
+{
+  "title": "Ranking de alabanza",
+  "description": "Qué canciones se tocaron hasta el final en este equipo.",
+  "period": {
+    "label": "Período",
+    "30d": "Últimos 30 días",
+    "6m": "Últimos 6 meses",
+    "12m": "Últimos 12 meses",
+    "all": "Todo el período"
+  },
+  "data": {
+    "empty": "Aún no se tocó ninguna canción hasta el final.",
+    "empty_hint": "Las canciones aparecerán aquí cuando se toquen hasta el final."
+  },
+  "columns": {
+    "music": "Canción",
+    "times": "Veces",
+    "plays": "Reproducciones completas",
+    "last_played": "Última vez"
+  },
+  "actions": {
+    "export": "Exportar CSV",
+    "clear": "Borrar registros antiguos",
+    "show_more": "Mostrar más",
+    "cancel": "Cancelar"
+  },
+  "search": {
+    "placeholder": "Buscar canción por nombre",
+    "no_results": "Ninguna canción encontrada en este período."
+  },
+  "cleanup": {
+    "title": "Borrar registros antiguos",
+    "description": "Elija qué borrar del registro del ranking. Esta acción no se puede deshacer.",
+    "label": "Borrar registros con más de",
+    "options": {
+      "3": "3 meses",
+      "6": "6 meses",
+      "12": "12 meses",
+      "24": "24 meses",
+      "all": "Todos los registros"
+    },
+    "preview": "Se borrarán [n] de [total] registros.",
+    "none": "Ningún registro en este período.",
+    "confirm": "Borrar"
+  }
+}

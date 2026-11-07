@@ -1,0 +1,46 @@
+{
+  "title": "Ranking do louvor",
+  "description": "Quais músicas foram tocadas até o fim neste computador.",
+  "period": {
+    "label": "Período",
+    "30d": "Últimos 30 dias",
+    "6m": "Últimos 6 meses",
+    "12m": "Últimos 12 meses",
+    "all": "Todo o período"
+  },
+  "data": {
+    "empty": "Nenhuma música tocada até o fim ainda.",
+    "empty_hint": "As músicas aparecem aqui quando forem tocadas até o fim."
+  },
+  "columns": {
+    "music": "Música",
+    "times": "Vezes",
+    "plays": "Reproduções completas",
+    "last_played": "Última vez"
+  },
+  "actions": {
+    "export": "Exportar CSV",
+    "clear": "Limpar registros antigos",
+    "show_more": "Mostrar mais",
+    "cancel": "Cancelar"
+  },
+  "search": {
+    "placeholder": "Buscar música pelo nome",
+    "no_results": "Nenhuma música encontrada neste período."
+  },
+  "cleanup": {
+    "title": "Limpar registros antigos",
+    "description": "Escolha o que apagar do registro do ranking. Isso não pode ser desfeito.",
+    "label": "Apagar registros com mais de",
+    "options": {
+      "3": "3 meses",
+      "6": "6 meses",
+      "12": "12 meses",
+      "24": "24 meses",
+      "all": "Todos os registros"
+    },
+    "preview": "Serão apagados [n] de [total] registros.",
+    "none": "Nenhum registro neste período.",
+    "confirm": "Apagar"
+  }
+}

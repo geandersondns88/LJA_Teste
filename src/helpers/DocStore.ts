@@ -75,6 +75,24 @@ export default {
     );
   },
 
+  /**
+   * Remove vários documentos de uma vez. No desktop é uma única gravação: `del` em laço
+   * esperaria o lote de 300 ms do main a cada documento.
+   */
+  async delMany(colecao: string, ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    if (!_desktop()) {
+      await Promise.all(ids.map((id) => $idb.del(colecao, id)));
+      return;
+    }
+    const remover = new Set(ids);
+    const docs = await _load<Doc>(colecao);
+    await _save(
+      colecao,
+      docs.filter((d) => !remover.has(d.id))
+    );
+  },
+
   /** Esvazia a coleção. */
   async clear(colecao: string): Promise<void> {
     if (!_desktop()) return $idb.clear(colecao);

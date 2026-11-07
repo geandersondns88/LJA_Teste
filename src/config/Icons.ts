@@ -239,6 +239,7 @@ export const ICONS = {
     MUSICS: "ja",
     ONLINE_VIDEOS: "brand-youtube",
     OVERLAY: "stack-2",
+    PLAY_STATS: "chart-bar",
     REMOTE_CONTROL: "device-remote",
     SCHEDULED_ITEMS: "calendar-check",
     SLIDE_EDITOR: "slideshow",

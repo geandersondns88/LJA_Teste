@@ -22,6 +22,8 @@ export const DB_TABLE = {
   MUSICS: ModuleEnum.MUSICS,
   // ─── Playlists do usuário ───
   MUSICS_PLAYLISTS: ModuleEnum.MUSICS + ".playlists",
+  // ─── Músicas tocadas até o fim (só local, uma linha por reprodução) ───
+  MUSICS_PLAY_LOG: ModuleEnum.MUSICS + ".play_log",
   HYMNAL: ModuleEnum.HYMNAL,
   HYMNAL_1996: ModuleEnum.HYMNAL_1996,
   ALBUMS: "albums",

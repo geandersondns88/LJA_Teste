@@ -11,6 +11,9 @@ vi.mock("@/helpers/Telemetry", () => ({
 }));
 import Telemetry from "@/helpers/Telemetry";
 
+vi.mock("@/helpers/PlayLog", () => ({ default: { add: vi.fn(async () => null) } }));
+import PlayLog from "@/helpers/PlayLog";
+
 const audio = useAudioPlayback();
 
 function stubPlay(rejection: Error | null) {
@@ -362,4 +365,162 @@ it("buffering curto só registra recuperação e playing repetido não repete in
   });
   audio.reset();
   vi.useRealTimers();
+});
+
+describe("useAudioPlayback: registro local das músicas tocadas até o fim", () => {
+  const contexto = (playback_id: string) => ({
+    playback_id,
+    id_music: 42,
+    title: "Vem, Espírito Santo",
+    mode: "audio",
+  });
+
+  function posicionar(el: HTMLMediaElement, current: number, duration: number) {
+    Object.defineProperty(el, "duration", { configurable: true, value: duration });
+    Object.defineProperty(el, "currentTime", { configurable: true, writable: true, value: current });
+  }
+
+  beforeEach(() => {
+    audio.reset();
+    vi.clearAllMocks();
+  });
+
+  it("grava um registro quando a música termina (ended)", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(contexto("p-fim"));
+    posicionar(el, 100, 100);
+
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+    expect(PlayLog.add).toHaveBeenCalledWith({
+      id_music: 42,
+      name: "Vem, Espírito Santo",
+      mode: "audio",
+    });
+  });
+
+  it("grava ao pausar com 90% ou mais da duração", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(contexto("p-90"));
+    posicionar(el, 90, 100);
+
+    el.dispatchEvent(new Event("pause"));
+
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+  });
+
+  it("não grava ao pausar com menos de 90%", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(contexto("p-89"));
+    posicionar(el, 89, 100);
+
+    el.dispatchEvent(new Event("pause"));
+
+    expect(PlayLog.add).not.toHaveBeenCalled();
+  });
+
+  it("pausa a 95%, retoma e termina: um único registro", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(contexto("p-retoma"));
+    posicionar(el, 95, 100);
+    el.dispatchEvent(new Event("pause"));
+
+    posicionar(el, 100, 100);
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+  });
+
+  it("uma nova reprodução (playback_id diferente) volta a gravar", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(contexto("p-a"));
+    posicionar(el, 100, 100);
+    el.dispatchEvent(new Event("ended"));
+
+    audio.setTelemetryContext(contexto("p-b"));
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledTimes(2);
+  });
+
+  it("não grava quando não há contexto de reprodução", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(null);
+    posicionar(el, 100, 100);
+
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAudioPlayback: registro local e troca de modo (cantada ↔ playback)", () => {
+  const original = {
+    playback_id: "p-orig",
+    id_music: 42,
+    title: "Vem, Espírito Santo",
+    mode: "audio",
+  };
+  // A troca de modo cria um playback_id novo, sem título, filho do anterior.
+  const troca = {
+    playback_id: "p-troca",
+    id_music: 42,
+    mode: "instrumental",
+    parent_playback_id: "p-orig",
+  };
+
+  function posicionar(el: HTMLMediaElement, current: number, duration: number) {
+    Object.defineProperty(el, "duration", { configurable: true, value: duration });
+    Object.defineProperty(el, "currentTime", { configurable: true, writable: true, value: current });
+  }
+
+  beforeEach(() => {
+    audio.reset();
+    vi.clearAllMocks();
+  });
+
+  it("trocar de modo depois de completar não conta a mesma música duas vezes", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(original);
+    posicionar(el, 95, 100);
+    el.dispatchEvent(new Event("pause"));
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+
+    audio.setTelemetryContext(troca);
+    posicionar(el, 100, 100);
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+  });
+
+  it("trocar de modo antes de completar grava com o nome da música, não com o número", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(original);
+    posicionar(el, 50, 100);
+    audio.setTelemetryContext(troca);
+
+    posicionar(el, 100, 100);
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledOnce();
+    expect(PlayLog.add).toHaveBeenCalledWith({
+      id_music: 42,
+      name: "Vem, Espírito Santo",
+      mode: "instrumental",
+    });
+  });
+
+  it("uma reprodução nova sem parentesco (outra música) continua gravando", () => {
+    const el = audio.getElement();
+    audio.setTelemetryContext(original);
+    posicionar(el, 100, 100);
+    el.dispatchEvent(new Event("ended"));
+
+    audio.setTelemetryContext({ playback_id: "p-outra", id_music: 43, title: "Outra", mode: "audio" });
+    el.dispatchEvent(new Event("ended"));
+
+    expect(PlayLog.add).toHaveBeenCalledTimes(2);
+    expect(PlayLog.add).toHaveBeenLastCalledWith({ id_music: 43, name: "Outra", mode: "audio" });
+  });
 });

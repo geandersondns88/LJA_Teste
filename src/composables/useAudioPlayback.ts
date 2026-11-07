@@ -1,6 +1,7 @@
 import { ref, getCurrentScope, onScopeDispose, type Ref } from "vue";
 import { detachMediaSource as _detachSource } from "@/helpers/Dom";
 import Telemetry from "@/helpers/Telemetry";
+import PlayLog from "@/helpers/PlayLog";
 import { mediaElementDetails, mediaDiagnosticMessage } from "@/helpers/MediaDiagnostics";
 
 type TimeCallback = (currentTime: number, duration: number) => void;
@@ -90,6 +91,12 @@ function _create(): AudioPlayback {
   let _lastListeningReportAt = 0;
   let _listeningStartedReported = false;
   let _listeningCompletedReported = false;
+  /**
+   * A reprodução já entrou no registro local das músicas tocadas até o fim. Separada da flag da
+   * telemetria porque a troca de modo (cantada ↔ playback) abre um playback_id novo para
+   * a mesma escuta: a telemetria zera a dela, o registro local não pode contar de novo.
+   */
+  let _playLogged = false;
   let _bufferingTimer: ReturnType<typeof setTimeout> | null = null;
   let _bufferingPhase = "initial_load";
   let _clockStalled = false;
@@ -203,6 +210,16 @@ function _create(): AudioPlayback {
           completion_ratio: completionRatio,
         })
       );
+      // Registro local, só neste computador: mesma regra e mesmo momento da telemetria,
+      // mas não depende dela. O PlayLog valida o id e nunca lança.
+      if (!_playLogged) {
+        _playLogged = true;
+        void PlayLog.add({
+          id_music: _telemetryContext.id_music,
+          name: _telemetryContext.title,
+          mode: _telemetryContext.mode,
+        });
+      }
     }
     _lastListeningReportAt = now;
   }
@@ -909,6 +926,7 @@ function _create(): AudioPlayback {
     _lastListeningReportAt = 0;
     _listeningStartedReported = false;
     _listeningCompletedReported = false;
+    _playLogged = false;
     if (_el) {
       // Não deixe eventos enfileirados da faixa anterior atravessarem o novo
       // contexto no mesmo elemento DOM. `getElement` reinstala de forma
@@ -939,12 +957,22 @@ function _create(): AudioPlayback {
     getElement,
     setElementKind,
     setTelemetryContext: (context) => {
+      // A troca de modo (cantada ↔ playback) abre um playback_id novo, filho do anterior
+      // e sem título: continua sendo a mesma escuta da mesma música.
+      const continuation =
+        !!context &&
+        !!_telemetryContext &&
+        context.parent_playback_id === _telemetryContext.playback_id;
+      if (continuation && context && context.title === undefined && _telemetryContext?.title) {
+        context = { ...context, title: _telemetryContext.title };
+      }
       if (context?.playback_id !== _telemetryContext?.playback_id) {
         _listenedSeconds = 0;
         _lastListenedTime = 0;
         _lastListeningReportAt = 0;
         _listeningStartedReported = false;
         _listeningCompletedReported = false;
+        if (!continuation) _playLogged = false;
       }
       _telemetryContext = context;
       if (_el) {
